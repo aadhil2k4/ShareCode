@@ -33,12 +33,26 @@ def start_client():
     # Start a thread to receive messages from the server
     threading.Thread(target=receive_messages, args=(client_socket,)).start()
 
-    print("Connected to the server. Start typing:")
+    # Ask for the access type (readonly/edit)
+    access_type = input("Enter your access type (readonly/edit): ")
+    client_socket.send(access_type.encode('utf-8'))
 
-    # Capture each character and send it to the server
-    while True:
-        char = get_single_character()  # Capture one character at a time
-        client_socket.send(char.encode('utf-8'))  # Send each character immediately
+    if access_type == "readonly":
+        print("You have readonly access. You cannot edit.")
+        while True:
+            # Just block the terminal to prevent any typing in readonly mode
+            pass  # Do nothing, prevent input capture
+    else:
+        print("You have edit access. Start typing:")
+
+        # Capture each character and send it to the server (only if edit access)
+        while True:
+            char = get_single_character()  # Capture one character at a time
+
+            if char == '\x7f':  # Handle backspace
+                client_socket.send(char.encode('utf-8'))  # Send backspace character
+            else:
+                client_socket.send(char.encode('utf-8'))  # Send each character immediately
 
 if __name__ == "__main__":
     start_client()
